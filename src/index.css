@@ -12,3 +12,12 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+a, a:visited {
+  color: inherit;  /* TODO: change color */
+  text-decoration: none;
+}
+
+a:hover, a.active {
+  color: inherit;  /* TOOD: change color */
+}
