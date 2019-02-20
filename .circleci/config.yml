@@ -1,0 +1,25 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node
+    environment:
+      SSH_OPTS: 'UserKnownHostsFile=.circleci/ssh_hosts'
+      BUILD_PREFIX: 'bili-live-okuru'
+      PRODUCTION_HOST: 'root@wacky.one'
+      PRODUCTION_TARGET: '/publish/bili-live-gift'
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - save_cache: # special step to save the dependency cache
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+      - run: yarn build
+      - run:
+          name: Push to server
+          command: |
+            BUNDLE=${BUILD_PREFIX}-$(git rev-parse --short HEAD)-circleci-${CIRCLE_BUILD_NUM}
+            tar -C build -zcf - ./ | ssh -o ${SSH_OPTS} ${PRODUCTION_HOST} "mkdir -p /tmp/${BUNDLE}/ && tar -C /tmp/${BUNDLE}/ -zxvf - && cp -vr /tmp/${BUNDLE}/* ${PRODUCTION_TARGET} && rm -rf /tmp/${BUNDLE}"
