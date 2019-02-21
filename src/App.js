@@ -107,6 +107,9 @@ class App extends Component {
       if (json.cmd === 'SEND_GIFT') {
         this.handleGiftDanmaku(json.data)
       }
+      if (json.cmd === 'GUARD_BUY') {
+        this.handleGuardDanmaku(json.data)
+      }
     } catch (e) {
       console.error(`invalid json: ${jsonStr}`)
     }
@@ -137,6 +140,37 @@ class App extends Component {
       giftId,
       num,
       coinType,
+      cnyCost,
+      userId,
+      userName,
+      guardLevel,
+      time: timestamp * 1000,
+      ack: false
+    }
+
+    this.addGift(giftRecord)
+  }
+
+  handleGuardDanmaku(guard) {
+    const {
+      gift_name: giftName,
+      gift_id: giftId,
+      num,
+      price,
+      uid: userId,
+      uname: userName,
+      guard_level: guardLevel,
+      start_time: timestamp,
+    } = guard
+
+    const cnyCost = parseFloat((price * num / 1000).toFixed(2))
+
+    const giftRecord = {
+      key: shortid(),
+      giftName,
+      giftId,
+      num,
+      coinType: 'gold',
       cnyCost,
       userId,
       userName,
