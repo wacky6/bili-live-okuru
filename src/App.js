@@ -158,7 +158,7 @@ class App extends Component {
       num,
       price,
       uid: userId,
-      uname: userName,
+      username: userName,
       guard_level: guardLevel,
       start_time: timestamp,
     } = guard
