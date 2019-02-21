@@ -1,32 +1,8 @@
 import React, { Component } from 'react';
 import { css } from 'glamor'
-import { format as formatTimeAgo, register as registerTimeAgo } from 'timeago.js'
+import { render as renderTimeAgo, cancel as cancelTimeAgo } from 'timeago.js'
 import "./checkbox.css"
 import "./button.css"
-
-const timeAgoFunc = (number, index, total_sec) => {
-  // number: the timeago / timein number;
-  // index: the index of array below;
-  // total_sec: total seconds between date to be formatted and today's date;
-  return [
-    ['刚刚', '片刻后'],
-    ['刚刚', '片刻后'],
-    ['1 分钟前', '1 分钟后'],
-    ['%s 分钟前', '%s 分钟后'],
-    ['1 小时前', '1 小时后'],
-    ['%s 小时前', '%s 小时后'],
-    ['1 天前', '1 天后'],
-    ['%s 天前', '%s 天后'],
-    ['1 周前', '1 周后'],
-    ['%s 周前', '%s 周后'],
-    ['1 个月前', '1 个月后'],
-    ['%s 个月前', '%s 个月后'],
-    ['1 年前', '1 年后'],
-    ['%s 年前', '%s 年后']
-  ][index];
-};
-
-registerTimeAgo('custom', timeAgoFunc)
 
 const giftRecordCss = css({
   display: 'flex',
@@ -56,6 +32,7 @@ const giftRecordCss = css({
     color: '#777',
     fontSize: '80%',
     verticalAlign: 'middle',
+    wordBreak: 'keep-all',
     '::before': {
       content: "["
     },
@@ -76,6 +53,10 @@ const Checkbox = ({
 )
 
 class UserInfo extends Component {
+  constructor(props) {
+    super(props)
+    this.refTimeago = React.createRef()
+  }
   render() {
     const {
       name,
@@ -94,17 +75,24 @@ class UserInfo extends Component {
             : null
           }
         </div>
-        <div className="time">{formatTimeAgo(time, 'custom')}</div>
+        <div className="time" ref={this.refTimeago} dateTime={time}></div>
       </div>
     )
   }
 
   componentDidMount() {
-    this._interval = setInterval(_ => this.forceUpdate(), 60*1000)
+    renderTimeAgo(this.refTimeago.current, 'zh_CN')
   }
 
   componentWillUnmount() {
-    clearInterval(this._interval)
+    cancelTimeAgo(this.refTimeago.current)
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.time !== this.props.time) {
+      cancelTimeAgo(this.refTimeago.current)
+      renderTimeAgo(this.refTimeago.current, 'zh_CN')
+    }
   }
 }
 
