@@ -4,6 +4,7 @@ import localForage from 'localforage'
 import DanmakuHime from './DanmakuHime'
 import GiftHistory from './GiftHistory'
 import shortid from 'shortid'
+import GiftSummary from './GiftSummary';
 
 const headerCss = css({
   position: 'fixed',
@@ -18,8 +19,48 @@ const headerCss = css({
 })
 
 const mainCss = css({
+  boxSizing: 'border-box',
   paddingTop: 40,
-  paddingBottom: '2em'
+  paddingBottom: '1.5em',
+  minHeight: '100vh',
+  maxHeight: '100vh',
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  ' .gift-history, .gift-summary': {
+    overflowY: 'scroll',
+    width: '100%',
+  },
+  ' .active-page-selection': {
+    minHeight: '2em',
+    maxHeight: '2em',
+  },
+  '.active-history': {
+    ' .gift-summary': {
+      display: 'none'
+    }
+  },
+  '.active-summary': {
+    ' .gift-history': {
+      display: 'none'
+    }
+  },
+  '@media (min-width: 740px)': {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'stretch',
+    ' .active-page-selection': {
+      display: 'none'
+    },
+    ' .gift-history, .gift-summary': {
+      display: 'block !important',
+      flex: '360 0 360px',
+      margin: '0 10px',
+    },
+  }
 })
 
 const footerCss = css({
@@ -77,6 +118,8 @@ const ConnectionIndicator = ({room, connectionState}) => (
 const IS_PRODUCTION = localStorage.getItem('env') !== 'test'
 const GIFT_ACK_THRESHOLD = 50 * 1000    // gift >= 50 CNY should be acknowledged
 const GIFT_HISTORY_KEY = 'gift_history'
+const GIFT_SUMMARY_KEY = 'gift_summary'
+const APP_PAGE_KEY = 'active_page'
 
 const getHashRoomId = () => parseInt(window.location.hash.slice(1), 10) || null
 
@@ -87,7 +130,9 @@ class App extends Component {
     this.state = {
       roomId: null,
       giftHistory: [],
+      giftSummary: [],
       danmakuConnectionState: 'closed',
+      activePage: 'history'
     }
 
     this._boundOnHashChange = this.onHashChange.bind(this)
@@ -102,16 +147,18 @@ class App extends Component {
   }
 
   onDanmakuMessage(jsonStr) {
+    let json
     try {
-      const json = JSON.parse(jsonStr)
-      if (json.cmd === 'SEND_GIFT') {
-        this.handleGiftDanmaku(json.data)
-      }
-      if (json.cmd === 'GUARD_BUY') {
-        this.handleGuardDanmaku(json.data)
-      }
+      json = JSON.parse(jsonStr)
     } catch (e) {
       console.error(`invalid json: ${jsonStr}`)
+    }
+
+    if (json.cmd === 'SEND_GIFT') {
+      this.handleGiftDanmaku(json.data)
+    }
+    if (json.cmd === 'GUARD_BUY') {
+      this.handleGuardDanmaku(json.data)
     }
   }
 
@@ -129,10 +176,7 @@ class App extends Component {
       timestamp,
     } = gift
 
-    if (IS_PRODUCTION && coinType !== 'gold') return
-
     const cnyCost = parseFloat(((totalCoin || price * num) / 1000).toFixed(2))
-    if (IS_PRODUCTION && totalCoin < GIFT_ACK_THRESHOLD) return
 
     const giftRecord = {
       key: shortid(),
@@ -148,7 +192,12 @@ class App extends Component {
       ack: false
     }
 
-    this.addGift(giftRecord)
+    this.accumulateGift(giftRecord)
+
+    const shouldAckGift = coinType === 'gold' && totalCoin >= GIFT_ACK_THRESHOLD
+    if (shouldAckGift || !IS_PRODUCTION) {
+      this.addGift(giftRecord)
+    }
   }
 
   handleGuardDanmaku(guard) {
@@ -180,6 +229,7 @@ class App extends Component {
     }
 
     this.addGift(giftRecord)
+    this.accumulateGift(giftRecord)
   }
 
   addGift(giftRecord) {
@@ -205,8 +255,45 @@ class App extends Component {
     })
   }
 
+  accumulateGift(giftRecord) {
+    const { giftSummary } = this.state
+    const { key: recordKey, giftId, giftName, num, userId, userName, guardLevel, time } = giftRecord
+    const idx = giftSummary.findIndex(summary => summary.id === giftId)
+    const sumEntry = giftSummary[idx] || {
+      id: giftId,
+      name: giftName,
+      sum: 0,
+      recent: []
+    }
+    const newSumEntry = {
+      ...sumEntry,
+      sum: sumEntry.sum + num,
+      recent: [
+        { key: recordKey, userId, userName, guardLevel, num, time },
+        ...sumEntry.recent,
+      ].slice(0, 100)
+    }
+    if (idx === -1) {
+      this.setState({
+        giftSummary: [...giftSummary, newSumEntry]
+      })
+    } else {
+      this.setState({
+        giftSummary: [
+          ...giftSummary.slice(0, idx),
+          newSumEntry,
+          ...giftSummary.slice(idx + 1)
+        ]
+      })
+    }
+  }
+
   clearHistory() {
     this.setState({ giftHistory: [] })
+  }
+
+  clearSummary() {
+    this.setState({ giftSummary: [] })
   }
 
   onHashChange() {
@@ -220,12 +307,16 @@ class App extends Component {
 
     Promise.all([
       getHashRoomId(),
-      localForage.getItem(GIFT_HISTORY_KEY)
+      localForage.getItem(APP_PAGE_KEY),
+      localForage.getItem(GIFT_HISTORY_KEY),
+      localForage.getItem(GIFT_SUMMARY_KEY),
     ]).then(
-      ([roomId, giftHistory]) => {
+      ([roomId, activePage, giftHistory, giftSummary]) => {
         this.setState({
           roomId: roomId || null,
-          giftHistory: giftHistory || []
+          activePage: activePage || 'history',
+          giftHistory: giftHistory || [],
+          giftSummary: giftSummary || [],
         })
       }
     )
@@ -239,13 +330,21 @@ class App extends Component {
     if (prevState.giftHistory !== this.state.giftHistory) {
       localForage.setItem(GIFT_HISTORY_KEY, this.state.giftHistory)
     }
+    if (prevState.giftSummary !== this.state.giftSummary) {
+      localForage.setItem(GIFT_SUMMARY_KEY, this.state.giftSummary)
+    }
+    if (prevState.activePage !== this.state.activePage) {
+      localForage.setItem(APP_PAGE_KEY, this.state.activePage)
+    }
   }
 
   render() {
     const {
       roomId,
       giftHistory,
+      giftSummary,
       danmakuConnectionState,
+      activePage,
     } = this.state
 
     return (
@@ -255,7 +354,10 @@ class App extends Component {
           <ConnectionIndicator room={roomId} connectionState={danmakuConnectionState} />
         </header>
 
-        <main {...mainCss}>
+        <main
+          {...mainCss}
+          className={`active-${activePage}`}
+        >
 
           <DanmakuHime
             roomId={ roomId }
@@ -264,7 +366,10 @@ class App extends Component {
             onDanmaku={ this.onDanmakuMessage.bind(this) }
           />
 
+          <div className="active-page-selection">TODO SEL</div>
+
           <GiftHistory list={giftHistory} onAck={this.ackGift.bind(this)} onClearButton={this.clearHistory.bind(this)} />
+          <GiftSummary list={giftSummary} onClearButton={this.clearSummary.bind(this)} />
 
         </main>
         <footer {...footerCss}>

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { css } from 'glamor'
 import { render as renderTimeAgo, cancel as cancelTimeAgo } from 'timeago.js'
+import UserBadge from './UserBadge'
 import "./checkbox.css"
 import "./button.css"
 
@@ -10,6 +11,7 @@ const giftRecordCss = css({
   alignItems: 'center',
   justifyContent: 'flex-start',
   padding: '.25em 1ch',
+  maxWidth: 480,
   '> .gift-info': {
     flex: '1 1',
     padding: '.25em 1ch',
@@ -68,12 +70,7 @@ class UserInfo extends Component {
       <div className='user-info'>
         <div>
           <span className="name">{name}</span>
-          {
-              guard === 3 ? <span className="badge guard-3">舰长</span>
-            : guard === 2 ? <span className="badge guard-2">提督</span>
-            : guard === 1 ? <span className="badge guard-1">总督</span>
-            : null
-          }
+          <UserBadge guardLevel={guard} />
         </div>
         <div className="time" ref={this.refTimeago} dateTime={time}></div>
       </div>
@@ -141,7 +138,7 @@ class GiftHistory extends Component {
     }
 
     return (
-      <div className="gift-list">
+      <div className="gift-history" style={{maxWidth: 480}}>
         { list.map(record => GiftRecord({
             ...record,
             onAck: ack => handleChange(record, ack)
