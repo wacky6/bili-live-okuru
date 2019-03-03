@@ -63,6 +63,18 @@ const mainCss = css({
   }
 })
 
+const activePageSelectionCss = css({
+  lineHeight: '1.6em',
+  ' .tab': {
+    padding: '0 0.75ch 0.1em 0.75ch',
+    margin: '0 1ch',
+  },
+  ' .active': {
+    color: 'hsl(210, 100%, 63%)',
+    borderBottom: '2px solid hsl(210, 100%, 63%)'
+  }
+})
+
 const footerCss = css({
   height: '1.5em',
   fontSize: '.75em',
@@ -347,6 +359,8 @@ class App extends Component {
       activePage,
     } = this.state
 
+    const setActivePage = (page) => () => this.setState({ activePage: page })
+
     return (
       <div style={{ minHeight: '100vh' }} className="App">
         <header {...headerCss}>
@@ -366,16 +380,18 @@ class App extends Component {
             onDanmaku={ this.onDanmakuMessage.bind(this) }
           />
 
-          <div className="active-page-selection">TODO SEL</div>
+          <div className="active-page-selection tabs" {...activePageSelectionCss}>
+            <span className={`tab ${activePage === 'history' ? 'active' : ''}`} onClick={setActivePage('history')}>答谢</span>
+            <span className={`tab ${activePage === 'summary' ? 'active' : ''}`} onClick={setActivePage('summary')}>数量</span>
+          </div>
 
           <GiftHistory list={giftHistory} onAck={this.ackGift.bind(this)} onClearButton={this.clearHistory.bind(this)} />
           <GiftSummary list={giftSummary} onClearButton={this.clearSummary.bind(this)} />
 
         </main>
         <footer {...footerCss}>
-          <span role="img" aria-label="star">🌟</span>
           <a className="gh-link" href="https://github.com/wacky6/hikaru" rel="noopener noreferrer" target="_blank">hikaru project</a>
-          /
+          <span role="img" aria-label="star"> 🌟 </span>
           <a className="hikari" href="https://space.bilibili.com/25806515/" rel="nofollow noopener noreferrer" target="_blank">君は私の光</a>
         </footer>
       </div>

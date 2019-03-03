@@ -6,7 +6,7 @@ import "./button.css"
 import UserBadge from './UserBadge'
 
 const giftSummaryCss = css({
-  padding: '.25em 2ch',
+  padding: '.5em 2ch',
   '> .primary': {
     fontSize: '133%',
     '> .name': {
@@ -22,7 +22,7 @@ const giftSummaryCss = css({
 const recentGiftCss = css({
   fontSize: '80%',
   color: '#777',
-  margin: '.25em 0',
+  margin: '.5em 0',
   whiteSpace: 'nowrap',
   overflowX: 'hidden',
   textOverflow: 'ellipsis',
