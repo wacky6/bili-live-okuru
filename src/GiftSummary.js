@@ -98,7 +98,7 @@ class RecentGift extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.time !== this.props.time) {
+    if (prevProps.list !== this.props.list) {
       cancelTimeAgo(this.refTimeago.current)
       renderTimeAgo(this.refTimeago.current, 'zh_CN')
     }
