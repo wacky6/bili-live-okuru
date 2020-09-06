@@ -272,14 +272,14 @@ class App extends Component {
     if (!this.state.readDanmaku)
       return
 
-    if (!this._speechVoice)
+    if (!window.speechSynthesis)
       return
 
     const msg = dmk[1]
     const user = dmk[2]
 
     const utter = new SpeechSynthesisUtterance(`${user[1]} 说： ${msg}`)
-    utter.voice = this._speechVoice
+    utter.voice = (this._speechVoice = this._speechVoice || getSpeechVoice())
 
     window.speechSynthesis.speak(utter)
   }
@@ -356,9 +356,6 @@ class App extends Component {
 
   componentDidMount() {
     window.addEventListener('hashchange', this._boundOnHashChange)
-
-    if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined)
-      speechSynthesis.onvoiceschanged = _ => this._speechVoice = getSpeechVoice()
 
     Promise.all([
       getHashRoomId(),
