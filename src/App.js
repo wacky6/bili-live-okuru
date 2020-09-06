@@ -134,6 +134,24 @@ const GIFT_SUMMARY_KEY = 'gift_summary'
 const APP_PAGE_KEY = 'active_page'
 
 const getHashRoomId = () => parseInt(window.location.hash.slice(1), 10) || null
+const getSpeechVoice = () => {
+  const voicePrefs = [
+    voice => voice.lang === 'zh-HK',
+    voice => voice.lang === 'zh-CN',
+    voice => voice.lang.startsWith('zh'),
+    _ => true,
+  ]
+
+  const voices = window.speechSynthesis.getVoices()
+
+  for (const prefFilter of voicePrefs) {
+    const voice = voices.find(prefFilter)
+    if (voice)
+      return voice
+  }
+
+  return null
+}
 
 class App extends Component {
   constructor() {
@@ -144,8 +162,11 @@ class App extends Component {
       giftHistory: [],
       giftSummary: [],
       danmakuConnectionState: 'closed',
-      activePage: 'history'
+      activePage: 'history',
+      readDanmaku: true,
     }
+
+    this._speechVoice = null
 
     this._boundOnHashChange = this.onHashChange.bind(this)
   }
@@ -171,6 +192,9 @@ class App extends Component {
     }
     if (json.cmd === 'GUARD_BUY') {
       this.handleGuardDanmaku(json.data)
+    }
+    if (json.cmd === 'DANMU_MSG') {
+      this.handleChatDanmaku(json.info)
     }
   }
 
@@ -242,6 +266,22 @@ class App extends Component {
 
     this.addGift(giftRecord)
     this.accumulateGift(giftRecord)
+  }
+
+  handleChatDanmaku(dmk) {
+    if (!this.state.readDanmaku)
+      return
+
+    if (!this._speechVoice)
+      return
+
+    const msg = dmk[1]
+    const user = dmk[2]
+
+    const utter = new SpeechSynthesisUtterance(`${user[1]} 说： ${msg}`)
+    utter.voice = this._speechVoice
+
+    window.speechSynthesis.speak(utter)
   }
 
   addGift(giftRecord) {
@@ -316,6 +356,9 @@ class App extends Component {
 
   componentDidMount() {
     window.addEventListener('hashchange', this._boundOnHashChange)
+
+    if (window.speechSynthesis.onvoiceschanged !== undefined)
+      speechSynthesis.onvoiceschanged = _ => this._speechVoice = getSpeechVoice()
 
     Promise.all([
       getHashRoomId(),
