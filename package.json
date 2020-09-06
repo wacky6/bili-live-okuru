@@ -117,5 +117,8 @@
     "presets": [
       "react-app"
     ]
+  },
+  "devDependencies": {
+    "pako": "^1.0.11"
   }
 }

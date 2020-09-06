@@ -1,5 +1,10 @@
 import EventEmitter from 'eventemitter3'
 import { Buffer } from 'buffer'
+import { inflate } from 'pako'
+
+function zlibInflate(buf) {
+  return Buffer.from(inflate(buf))
+}
 
 /* Danmaku monitor implementation
  * Follow https://github.com/Dawnnnnnn/bilibili-live-tools/blob/master/bilibiliCilent.py
@@ -141,13 +146,16 @@ class DanmakuStream extends EventEmitter{
   }
 
   handleData(data) {
-    this._parseBinaryFrames(data).forEach(({ magic, ver, action, param, payload }) => {
+    const handleFrame = ({ magic, ver, action, param, payload }) => {
       if (ver === 1 && action === 8) return // ack to join channel
       if (ver === 1 && action === 3) return this.handleHeartbeat()
       if (ver === 0 && action === 5) return this.handleDanmaku(payload.toString('utf-8'),  { server: this._server, rx_time: Date.now() })
+      if (ver === 2) return this._parseBinaryFrames(zlibInflate(payload)).forEach(handleFrame)
       // TODO: complain unknown version / action
       console.warn(`unhandled frame: magic=${magic}, ver=${ver}, action=${action}, param=${param}, data=${payload.toString('utf-8')}`)
-    })
+    }
+
+    this._parseBinaryFrames(data).forEach(handleFrame)
   }
 
   handleDanmaku(danmakuStr, meta) {
