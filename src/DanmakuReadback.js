@@ -150,7 +150,7 @@ class DanmakuReadback extends Component {
       activeVoice: '_loading',
       voices: [],
       voicesLoaded: false,
-      volume: 0.5,
+      volume: 0.67,
       lastActiveTime: null,
     }
 

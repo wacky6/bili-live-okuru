@@ -145,8 +145,6 @@ class App extends Component {
     }
 
     this.refReadback = React.createRef()
-    this._speechVoice = null
-
     this._boundOnHashChange = this.onHashChange.bind(this)
   }
 
@@ -262,20 +260,6 @@ class App extends Component {
       guardLevel: dmk[7],
       time: Date.now()
     })
-
-    // if (!this.state.readDanmaku)
-    //   return
-
-    // if (!window.speechSynthesis)
-    //   return
-
-    // const msg = dmk[1]
-    // const user = dmk[2]
-
-    // const utter = new SpeechSynthesisUtterance(`${user[1]} 说： ${msg}`)
-    // utter.voice = (this._speechVoice = this._speechVoice || getSpeechVoice())
-
-    // window.speechSynthesis.speak(utter)
   }
 
   addGift(giftRecord) {
