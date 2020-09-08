@@ -150,7 +150,7 @@ class DanmakuReadback extends Component {
       activeVoice: '_loading',
       voices: [],
       voicesLoaded: false,
-      volume: 0.66,
+      volume: 0.5,
       lastActiveTime: null,
     }
 
@@ -306,7 +306,7 @@ class DanmakuReadback extends Component {
           </div>
         </div>
 
-        <div className="time">最新弹幕：<span ref={ this.refTimeago } dateTime={ lastActiveTime }></span></div>
+        <div className="time">↓ 最新弹幕：<span ref={ this.refTimeago } dateTime={ lastActiveTime }></span></div>
         <ol className="list"> { list.map(record => DanmakuMessage({...record})) } </ol>
       </div>
     )
