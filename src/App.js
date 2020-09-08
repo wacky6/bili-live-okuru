@@ -5,6 +5,7 @@ import DanmakuHime from './DanmakuHime'
 import GiftHistory from './GiftHistory'
 import shortid from 'shortid'
 import GiftSummary from './GiftSummary';
+import DanmakuReadback from './DanmakuReadback'
 
 const headerCss = css({
   position: 'fixed',
@@ -29,25 +30,20 @@ const mainCss = css({
   flexDirection: 'column',
   justifyContent: 'flex-start',
   alignItems: 'center',
-  ' .gift-history, .gift-summary': {
+  ' .gift-history, .gift-summary, .gift-readback': {
+    display: 'none',    // hide by default, show it in active page
     overflowY: 'scroll',
     width: '100%',
+    flex: '360 0 100%'
+  },
+  '.active-history .gift-history,.active-summary .gift-summary,.active-readback .gift-readback': {
+    display: 'block !important',
   },
   ' .active-page-selection': {
     minHeight: '2em',
     maxHeight: '2em',
   },
-  '.active-history': {
-    ' .gift-summary': {
-      display: 'none'
-    }
-  },
-  '.active-summary': {
-    ' .gift-history': {
-      display: 'none'
-    }
-  },
-  '@media (min-width: 740px)': {
+  '@media (min-width: 1200px)': {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -55,7 +51,7 @@ const mainCss = css({
     ' .active-page-selection': {
       display: 'none'
     },
-    ' .gift-history, .gift-summary': {
+    ' .gift-history, .gift-summary, .gift-readback': {
       display: 'block !important',
       flex: '360 0 360px',
       margin: '0 10px',
@@ -134,24 +130,6 @@ const GIFT_SUMMARY_KEY = 'gift_summary'
 const APP_PAGE_KEY = 'active_page'
 
 const getHashRoomId = () => parseInt(window.location.hash.slice(1), 10) || null
-const getSpeechVoice = () => {
-  const voicePrefs = [
-    voice => voice.lang === 'zh-HK',
-    voice => voice.lang === 'zh-CN',
-    voice => voice.lang.startsWith('zh'),
-    _ => true,
-  ]
-
-  const voices = window.speechSynthesis.getVoices()
-
-  for (const prefFilter of voicePrefs) {
-    const voice = voices.find(prefFilter)
-    if (voice)
-      return voice
-  }
-
-  return null
-}
 
 class App extends Component {
   constructor() {
@@ -162,10 +140,11 @@ class App extends Component {
       giftHistory: [],
       giftSummary: [],
       danmakuConnectionState: 'closed',
-      activePage: 'history',
-      readDanmaku: true,
+      activePage: 'readback',
+      readDanmaku: false,
     }
 
+    this.refReadback = React.createRef()
     this._speechVoice = null
 
     this._boundOnHashChange = this.onHashChange.bind(this)
@@ -269,19 +248,34 @@ class App extends Component {
   }
 
   handleChatDanmaku(dmk) {
-    if (!this.state.readDanmaku)
+    if (!this.refReadback.current)
       return
 
-    if (!window.speechSynthesis)
+    // Filter out raffle danmaku.
+    if (!dmk[0][5])
       return
 
-    const msg = dmk[1]
-    const user = dmk[2]
+    this.refReadback.current.addDanmaku({
+      key: shortid(),
+      message: dmk[1],
+      userName: dmk[2][1],
+      guardLevel: dmk[7],
+      time: Date.now()
+    })
 
-    const utter = new SpeechSynthesisUtterance(`${user[1]} 说： ${msg}`)
-    utter.voice = (this._speechVoice = this._speechVoice || getSpeechVoice())
+    // if (!this.state.readDanmaku)
+    //   return
 
-    window.speechSynthesis.speak(utter)
+    // if (!window.speechSynthesis)
+    //   return
+
+    // const msg = dmk[1]
+    // const user = dmk[2]
+
+    // const utter = new SpeechSynthesisUtterance(`${user[1]} 说： ${msg}`)
+    // utter.voice = (this._speechVoice = this._speechVoice || getSpeechVoice())
+
+    // window.speechSynthesis.speak(utter)
   }
 
   addGift(giftRecord) {
@@ -421,10 +415,12 @@ class App extends Component {
           />
 
           <div className="active-page-selection tabs" {...activePageSelectionCss}>
+            <span className={`tab ${activePage === 'readback' ? 'active' : ''}`} onClick={setActivePage('readback')}>弹幕</span>
             <span className={`tab ${activePage === 'history' ? 'active' : ''}`} onClick={setActivePage('history')}>答谢</span>
             <span className={`tab ${activePage === 'summary' ? 'active' : ''}`} onClick={setActivePage('summary')}>数量</span>
           </div>
 
+          <DanmakuReadback ref={this.refReadback} />
           <GiftHistory list={giftHistory} onAck={this.ackGift.bind(this)} onClearButton={this.clearHistory.bind(this)} />
           <GiftSummary list={giftSummary} onClearButton={this.clearSummary.bind(this)} />
 

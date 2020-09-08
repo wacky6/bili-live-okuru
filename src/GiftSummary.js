@@ -90,7 +90,7 @@ class RecentGift extends Component {
   }
 
   componentDidMount() {
-    renderTimeAgo(this.refTimeago.current, 'zh_CN')
+    renderTimeAgo(this.refTimeago.current, navigator.language)
   }
 
   componentWillUnmount() {
@@ -100,7 +100,7 @@ class RecentGift extends Component {
   componentDidUpdate(prevProps) {
     if (prevProps.list !== this.props.list) {
       cancelTimeAgo(this.refTimeago.current)
-      renderTimeAgo(this.refTimeago.current, 'zh_CN')
+      renderTimeAgo(this.refTimeago.current, navigator.language)
     }
   }
 }

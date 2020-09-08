@@ -78,7 +78,7 @@ class UserInfo extends Component {
   }
 
   componentDidMount() {
-    renderTimeAgo(this.refTimeago.current, 'zh_CN')
+    renderTimeAgo(this.refTimeago.current, navigator.language)
   }
 
   componentWillUnmount() {
@@ -88,7 +88,7 @@ class UserInfo extends Component {
   componentDidUpdate(prevProps) {
     if (prevProps.time !== this.props.time) {
       cancelTimeAgo(this.refTimeago.current)
-      renderTimeAgo(this.refTimeago.current, 'zh_CN')
+      renderTimeAgo(this.refTimeago.current, navigator.language)
     }
   }
 }
