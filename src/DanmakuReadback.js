@@ -55,6 +55,9 @@ function eliminateSymbols(text) {
 }
 
 function refineMessageText(text) {
+  for (const emoticon in emoticons)
+    text = text.replaceAll(emoticon, ` (${emoticons[emoticon] || '颜文字'}） `)
+
   text = text.replace(/1/g, '一')
   text = text.replace(/2/g, '二')
   text = text.replace(/3/g, '三')
@@ -67,8 +70,6 @@ function refineMessageText(text) {
   text = text.replace(/0/g, '零')
   text = text.replace(/www+$/g, '啊啊啊啊啊')
   text = text.replace(/hhh+$/g, '呵呵呵呵呵呵')
-  for (const emoticon in emoticons)
-    text = text.replaceAll(emoticon, ` (${emoticons[emoticon] || '颜文字'}） `)
 
   return text
 }
