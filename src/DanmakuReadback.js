@@ -9,7 +9,7 @@ const emoticons = {
   ':D': '笑脸',
   '(⌒▽⌒)': '开心',
   '（￣▽￣）': '笑嘻嘻',
-  '(=・ω・=)': '喵喵～',
+  '(=・ω・=)': '喵喵喵',
   '(｀・ω・´)': '快乐',
   '(〜￣△￣)〜': '你听我说嘛',
   '(･∀･)': '笑',
@@ -68,7 +68,7 @@ function refineMessageText(text) {
   text = text.replace(/www+$/g, '啊啊啊啊啊')
   text = text.replace(/hhh+$/g, '呵呵呵呵呵呵')
   for (const emoticon in emoticons)
-    text = text.replaceAll(emoticon, `（${emoticons[emoticon] || '颜文字'})`)
+    text = text.replaceAll(emoticon, ` (${emoticons[emoticon] || '颜文字'}） `)
 
   return text
 }
@@ -141,6 +141,14 @@ const DanmakuMessage = ({
   </li>
 )
 
+const getDefaultVolume = () => {
+  if (navigator.userAgent.includes('Windows'))
+    return 1.0
+  if (navigator.userAgent.includes('macOS') || navigator.userAgent.includes('OS X'))
+    return 0.5
+  return 0.67
+}
+
 class DanmakuReadback extends Component {
   constructor() {
     super()
@@ -150,7 +158,7 @@ class DanmakuReadback extends Component {
       activeVoice: '_loading',
       voices: [],
       voicesLoaded: false,
-      volume: 0.67,
+      volume: getDefaultVolume(),
       lastActiveTime: null,
     }
 
@@ -232,12 +240,16 @@ class DanmakuReadback extends Component {
     if (ev && ev.isTrusted) {
       // User triggered event, we should have user activation now.
       // Inject the queue, and speak.
-      this.readQueue.unshift({ message: '卟噜卟噜～干杯～', userName: '复读姬', guardLevel: 3, time: Date.now() })
+      this.readQueue.unshift({ message: '卟噜卟噜 干杯！', userName: '复读姬', guardLevel: 3, time: Date.now() })
     }
 
     const record = this.readQueue.shift()
     if (record)
       this.synthesizeAndSpeak(record)
+  }
+
+  handleVolumeSlider(ev) {
+    this.setState({ volume: Number(ev.target.value) / 100 })
   }
 
   synthesizeAndSpeak(record) {
@@ -250,7 +262,7 @@ class DanmakuReadback extends Component {
 
     const user = refineUserName(record.userName)
     const message = refineMessageText(record.message)
-    const utter = new SpeechSynthesisUtterance(`${user}说：${message}`)
+    const utter = new SpeechSynthesisUtterance(`${user}说 ${message}`)
     utter.voice = voice
     utter.volume = this.state.volume
     window.speechSynthesis.speak(utter)
@@ -279,7 +291,7 @@ class DanmakuReadback extends Component {
   }
 
   render() {
-    const { list, voices, voicesLoaded, lastActiveTime } = this.state
+    const { list, voices, voicesLoaded, lastActiveTime, volume } = this.state
 
     return (
       <div className="gift-readback" {...giftReadbackCss}>
@@ -297,6 +309,19 @@ class DanmakuReadback extends Component {
                 { voicesLoaded && voices.length ? <option value="_null" >[关]</option> : null }
                 { voices.map(voice => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.lang} - { voice.name }</option>) }
               </select>
+            </label>
+          </div>
+
+          <div className="volume-slider">
+            <label>
+              <span>音量：</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={ Number(volume * 100) }
+                onChange={ this.handleVolumeSlider.bind(this) }
+              />
             </label>
           </div>
 
