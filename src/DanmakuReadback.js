@@ -229,7 +229,11 @@ class DanmakuReadback extends Component {
     this.setState({
       voices: shortlist.sort(sortCompare),
       voicesLoaded: true,
-      activeVoice: shortlist[0].voiceURI
+      activeVoice: (
+        this.state.activeVoice[0] === '_'
+        ? shortlist[0].voiceURI
+        : this.state.activeVoice
+      )
     })
   }
 
