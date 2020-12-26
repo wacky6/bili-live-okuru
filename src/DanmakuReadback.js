@@ -47,7 +47,8 @@ const emoticons = {
   '(╬ﾟдﾟ)▄︻┻┳═一': '哒哒哒哒哒～',
   '･*･:≡(　ε:)': '',
   '(汗)': '汗',
-  '(苦笑)': '苦笑'
+  '(苦笑)': '苦笑',
+  '(ಡωಡ)': '滑稽',
 }
 
 function eliminateSymbols(text) {
@@ -70,8 +71,13 @@ function refineMessageText(text) {
   text = text.replace(/0/g, '零')
   text = text.replace(/www+$/g, '啊啊啊啊啊')
   text = text.replace(/hhh+$/g, '呵呵呵呵呵呵')
+  text = text.replace(/[~～]/g, '')
 
   return text
+}
+
+function shouldExcludeMessage(text) {
+  return text.trim().length === 0
 }
 
 function refineUserName(name) {
@@ -267,6 +273,10 @@ class DanmakuReadback extends Component {
 
     const user = refineUserName(record.userName)
     const message = refineMessageText(record.message)
+
+    if (shouldExcludeMessage(message))
+      return
+
     const utter = new SpeechSynthesisUtterance(`${user}说 ${message}`)
     utter.voice = voice
     utter.volume = this.state.volume
